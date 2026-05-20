@@ -15,13 +15,51 @@ function encrypt(text) {
     encrypted += cipher.final('base64');
     return encrypted;
 }
+// 1. مسار توكن البوت
+app.get('/token', async (req, res) => {
+    try {
+        res.send(encrypt(process.env.BOT_TOKEN));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to process token' });
+    }
+});
 
-// الروابط والبيانات المشفرة
-app.get('/token',    (req, res) => res.send(encrypt(process.env.BOT_TOKEN)));
-app.get('/chatid',   (req, res) => res.send(encrypt(process.env.getTelegramChatId)));
-app.get('/firebase', (req, res) => res.send(encrypt(process.env.FIREBASE_URL)));
-app.get('/update',   (req, res) => res.send(encrypt(process.env.TARGET_URL)));
-app.get('/bypass',   (req, res) => res.send(encrypt(process.env.URLJSON)));
+// 2. مسار معرف الشات
+app.get('/chatid', async (req, res) => {
+    try {
+        res.send(encrypt(process.env.getTelegramChatId));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to process chat ID' });
+    }
+});
+
+// 3. مسار قاعدة بيانات فايربيز
+app.get('/firebase', async (req, res) => {
+    try {
+        res.send(encrypt(process.env.FIREBASE_URL));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to process firebase URL' });
+    }
+});
+
+// 4. مسار التحديث
+app.get('/update', async (req, res) => {
+    try {
+        res.send(encrypt(process.env.TARGET_URL));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to process update URL' });
+    }
+});
+
+// 5. مسار التخطي
+app.get('/bypass', async (req, res) => {
+    try {
+        res.send(encrypt(process.env.URLJSON));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to process bypass URL' });
+    }
+});
+
 
 app.get('/config', async (req, res) => {
     try {
