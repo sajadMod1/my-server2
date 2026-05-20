@@ -41,11 +41,12 @@ app.post('/login', async (req, res) => {
             body: new URLSearchParams(req.body)
         });
         
-        // جلب البيانات الخام القادمة من السيرفر الأساسي
-        const data = await response.text();
+        let data = await response.text();
         
-        // 🔴 تعديل هنا: أرسل البيانات مباشرة بدون استخدام encrypt()
-        // لأن السيرفر الأساسي قام بتشفيرها بالفعل بالـ KEY والـ IV المطلوبة
+        // تنظيف النص القادم من اللوحة من أي علامات اقتباس أو فراغات زائدة قد تفسد التشفير
+        data = data.trim().replace(/^"|"$/g, ''); 
+        
+        // إرسال النص الصافي المشفر إلى اللودر / البايثون
         res.send(data); 
         
     } catch (err) {
