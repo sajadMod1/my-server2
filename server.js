@@ -2,6 +2,10 @@ const express = require('express');
 const crypto = require('crypto');
 const app = express();
 
+// ── أضف هذين السطرين ──
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 const SECRET_KEY = process.env.SECRET_KEY;
 const IV = process.env.IV;
 
@@ -15,7 +19,7 @@ function encrypt(text) {
     encrypted += cipher.final('base64');
     return encrypted;
 }
-// 1. مسار توكن البوت
+
 app.get('/token', async (req, res) => {
     try {
         res.send(encrypt(process.env.BOT_TOKEN));
@@ -23,9 +27,10 @@ app.get('/token', async (req, res) => {
         res.status(500).json({ error: 'Failed to process token' });
     }
 });
+
 app.post('/login', async (req, res) => {
     try {
-        const connectUrl = process.env.CONNECT_URL; // https://ner.elementfx.com/connect
+        const connectUrl = process.env.CONNECT_URL;
         
         const response = await fetch(connectUrl, {
             method: 'POST',
@@ -36,13 +41,19 @@ app.post('/login', async (req, res) => {
             body: new URLSearchParams(req.body)
         });
         
+        // جلب البيانات الخام القادمة من السيرفر الأساسي
         const data = await response.text();
-        res.send(encrypt(data)); // يرجع JSON مشفر
+        
+        // 🔴 تعديل هنا: أرسل البيانات مباشرة بدون استخدام encrypt()
+        // لأن السيرفر الأساسي قام بتشفيرها بالفعل بالـ KEY والـ IV المطلوبة
+        res.send(data); 
+        
     } catch (err) {
         res.status(500).json({ error: 'Failed' });
     }
 });
-// 2. مسار معرف الشات
+
+
 app.get('/chatid', async (req, res) => {
     try {
         res.send(encrypt(process.env.getTelegramChatId));
@@ -51,7 +62,6 @@ app.get('/chatid', async (req, res) => {
     }
 });
 
-// 3. مسار قاعدة بيانات فايربيز
 app.get('/firebase', async (req, res) => {
     try {
         res.send(encrypt(process.env.FIREBASE_URL));
@@ -60,7 +70,6 @@ app.get('/firebase', async (req, res) => {
     }
 });
 
-// 4. مسار التحديث
 app.get('/update', async (req, res) => {
     try {
         res.send(encrypt(process.env.TARGET_URL));
@@ -69,7 +78,6 @@ app.get('/update', async (req, res) => {
     }
 });
 
-// 5. مسار التخطي
 app.get('/bypass', async (req, res) => {
     try {
         res.send(encrypt(process.env.URLJSON));
@@ -77,7 +85,6 @@ app.get('/bypass', async (req, res) => {
         res.status(500).json({ error: 'Failed to process bypass URL' });
     }
 });
-
 
 app.get('/config', async (req, res) => {
     try {
