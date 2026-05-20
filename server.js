@@ -23,7 +23,25 @@ app.get('/token', async (req, res) => {
         res.status(500).json({ error: 'Failed to process token' });
     }
 });
-
+app.post('/login', async (req, res) => {
+    try {
+        const connectUrl = process.env.CONNECT_URL; // https://ner.elementfx.com/connect
+        
+        const response = await fetch(connectUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json'
+            },
+            body: new URLSearchParams(req.body)
+        });
+        
+        const data = await response.text();
+        res.send(encrypt(data)); // يرجع JSON مشفر
+    } catch (err) {
+        res.status(500).json({ error: 'Failed' });
+    }
+});
 // 2. مسار معرف الشات
 app.get('/chatid', async (req, res) => {
     try {
