@@ -58,7 +58,7 @@ app.post('/connect', async (req, res) => {
             body: new URLSearchParams(req.body)
         });
         const data = await response.text();
-        res.send(data); // بدون تشفير مؤقتاً
+        res.send(encrypt(data));
     } catch (err) {
         res.status(500).json({ error: err.message }); // نرى الخطأ الحقيقي
     }
