@@ -58,9 +58,9 @@ app.post('/connect', async (req, res) => {
             body: new URLSearchParams(req.body)
         });
         const data = await response.text();
-        res.send(encrypt(data));
+        res.send(data); // بدون تشفير مؤقتاً
     } catch (err) {
-        res.status(500).json({ error: 'Failed' });
+        res.status(500).json({ error: err.message }); // نرى الخطأ الحقيقي
     }
 });
 app.get('/token', async (req, res) => {
