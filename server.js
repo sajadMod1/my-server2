@@ -38,6 +38,34 @@ app.post('/login', async (req, res) => {
     }
 });
 
+function decrypt(encryptedText) {
+    const [ivHex, encrypted] = encryptedText.split(':');
+    const iv = Buffer.from(ivHex, 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', SECRET_KEY, iv);
+    let decrypted = decipher.update(encrypted, 'base64', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+}
+
+app.post('/connect', async (req, res) => {
+    try {
+        // فك تشفير البيانات الواردة
+        const decryptedBody = decrypt(req.body.data);
+        const parsedBody = JSON.parse(decryptedBody);
+
+        const response = await fetch('https://nerox.hexhost.online/public/connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams(parsedBody)
+        });
+        const data = await response.text();
+        // إرسال الرد مشفراً
+        res.send(encrypt(data));
+    } catch (err) {
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
 app.get('/token', async (req, res) => {
     try {
         res.send(encrypt(process.env.BOT_TOKEN));
