@@ -29,29 +29,13 @@ app.get('/token', async (req, res) => {
 });
 
 app.post('/login', async (req, res) => {
-    try {
-        const connectUrl = process.env.CONNECT_URL;
-        
-        const response = await fetch(connectUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Accept': 'application/json'
-            },
-            body: new URLSearchParams(req.body)
-        });
-        
-        let data = await response.text();
-        
-        // تنظيف النص القادم من اللوحة من أي علامات اقتباس أو فراغات زائدة قد تفسد التشفير
-        data = data.trim().replace(/^"|"$/g, ''); 
-        
-        // إرسال النص الصافي المشفر إلى اللودر / البايثون
-        res.send(data); 
-        
-    } catch (err) {
-        res.status(500).json({ error: 'Failed' });
-    }
+    const firebaseUrl = process.env.FIREBASE_URL;
+    const response = await fetch(firebaseUrl, {
+        method: 'POST',
+        body: new URLSearchParams(req.body)
+    });
+    const data = await response.text();
+    res.send(encrypt(data));
 });
 
 
