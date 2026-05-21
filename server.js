@@ -23,7 +23,6 @@ function verifyRequest(req, res, next) {
     next();
 }
 
-app.use(verifyRequest);
 
 app.post('/login', async (req, res) => {
     try {
