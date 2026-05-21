@@ -1,124 +1,119 @@
 const express = require('express');
 const crypto = require('crypto');
+
 const app = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+/* =========================
+   🔐 APK TOKEN
+========================= */
+const APK_TOKEN = process.env.APK_TOKEN;
 
-const SECRET_KEY = Buffer.from(process.env.SECRET_KEY, 'hex');
+/* =========================
+   🔐 FIXED AES KEYS
+========================= */
+const SECRET_KEY = crypto
+    .createHash('sha256')
+    .update(process.env.SECRET_KEY)
+    .digest();
 
+const IV = Buffer
+    .from(process.env.IV)
+    .slice(0, 16);
+
+/* =========================
+   🔒 ENCRYPT
+========================= */
 function encrypt(text) {
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv('aes-256-cbc', SECRET_KEY, iv);
-    let encrypted = cipher.update(text, 'utf8', 'base64');
+
+    const cipher = crypto.createCipheriv(
+        'aes-256-cbc',
+        SECRET_KEY,
+        IV
+    );
+
+    let encrypted = cipher.update(
+        text,
+        'utf8',
+        'base64'
+    );
+
     encrypted += cipher.final('base64');
-    return iv.toString('hex') + ':' + encrypted;
+
+    return encrypted;
 }
 
-function verifyRequest(req, res, next) {
-    const apiKey = req.headers['x-api-key'];
-    if (!apiKey || apiKey !== process.env.API_KEY) {
-        return res.status(403).json({ error: 'Unauthorized' });
+/* =========================
+   🔑 VERIFY APK TOKEN
+========================= */
+function verifyAPK(req, res, next) {
+
+    const token = req.headers['x-apk-token'];
+
+    if (!token) {
+        return res.status(403).json({
+            error: "اطلع ولك جاي تريد تسحب الملفات 😂"
+        });
     }
+
+    if (token !== APK_TOKEN) {
+        return res.status(403).json({
+            error: "Invalid APK token"
+        });
+    }
+
     next();
 }
 
+/* =========================
+   📦 CONFIG URL
+========================= */
+const CONFIG_URL =
+"https://github.com/sajadMod1/Raven1/raw/refs/heads/main/Bypass.json";
 
-
-app.post('/login', async (req, res) => {
-    try {
-        const response = await fetch(process.env.FIREBASE_URL, {
-            method: 'POST',
-            body: new URLSearchParams(req.body)
-        });
-        const data = await response.text();
-        res.send(encrypt(data));
-    } catch (err) {
-        res.status(500).json({ error: 'Failed' });
-    }
+/* =========================
+   ❤️ ROOT ROUTE
+========================= */
+app.get('/', (req, res) => {
+    res.json({
+        status: "online"
+    });
 });
 
-function decrypt(encryptedText) {
-    const [ivHex, encrypted] = encryptedText.split(':');
-    const iv = Buffer.from(ivHex, 'hex');
-    const decipher = crypto.createDecipheriv('aes-256-cbc', SECRET_KEY, iv);
-    let decrypted = decipher.update(encrypted, 'base64', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
-}
+/* =========================
+   🚀 SECURE ROUTE
+========================= */
+app.get(
+    '/bypass',
+    verifyAPK,
+    async (req, res) => {
 
-app.post('/connect', async (req, res) => {
-    try {
-        const response = await fetch('https://nerox.hexhost.online/public/connect', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Accept': 'application/json'
-            },
-            body: new URLSearchParams(req.body)
-        });
-        const data = await response.text();
-        res.send(encrypt(data));
-    } catch (err) {
-        res.status(500).json({ error: err.message }); // نرى الخطأ الحقيقي
-    }
-});
-app.get('/token', async (req, res) => {
-    try {
-        res.send(encrypt(process.env.BOT_TOKEN));
-    } catch (err) {
-        res.status(500).json({ error: 'Failed' });
-    }
-});
+        try {
 
-app.get('/chatid', async (req, res) => {
-    try {
-        res.send(encrypt(process.env.getTelegramChatId));
-    } catch (err) {
-        res.status(500).json({ error: 'Failed' });
-    }
-});
+            const response = await fetch(BYPASS_URL);
 
-app.get('/firebase', async (req, res) => {
-    try {
-        res.send(encrypt(process.env.FIREBASE_URL));
-    } catch (err) {
-        res.status(500).json({ error: 'Failed' });
-    }
-});
+            if (!response.ok) {
+                throw new Error(
+                    "GitHub fetch failed"
+                );
+            }
 
-app.get('/update', async (req, res) => {
-    try {
-        res.send(encrypt(process.env.TARGET_URL));
-    } catch (err) {
-        res.status(500).json({ error: 'Failed' });
-    }
-});
+            const data = await response.text();
 
-app.get('/bypass', async (req, res) => {
-    try {
-        res.send(encrypt(process.env.URLJSON));
-    } catch (err) {
-        res.status(500).json({ error: 'Failed' });
-    }
-});
+            const encrypted = encrypt(data);
 
-app.get('/config', async (req, res) => {
-    try {
-        const response = await fetch(process.env.TARGET_URL);
-        const data = await response.text();
-        res.send(encrypt(data));
-    } catch (err) {
-        res.status(500).json({ error: 'Failed' });
-    }
-});
+            res.json({
+                success: true,
+                data: encrypted
+            });
 
-app.get('/download', async (req, res) => {
-    try {
-        res.send(encrypt(process.env.DOWNLOAD_URL));
-    } catch (err) {
-        res.status(500).json({ error: 'Failed' });
+        } catch (err) {
+
+            res.status(500).json({
+                error: "Failed to fetch or encrypt",
+                debug: err.message
+            });
+        }
     }
-});
+);
 
 module.exports = app;
