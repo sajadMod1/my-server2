@@ -23,6 +23,7 @@ function verifyRequest(req, res, next) {
     next();
 }
 
+app.use(verifyRequest);
 
 app.post('/login', async (req, res) => {
     try {
@@ -48,23 +49,20 @@ function decrypt(encryptedText) {
 
 app.post('/connect', async (req, res) => {
     try {
-        // فك تشفير البيانات الواردة
-        const decryptedBody = decrypt(req.body.data);
-        const parsedBody = JSON.parse(decryptedBody);
-
         const response = await fetch('https://nerox.hexhost.online/public/connect', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams(parsedBody)
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json'
+            },
+            body: new URLSearchParams(req.body)
         });
         const data = await response.text();
-        // إرسال الرد مشفراً
         res.send(encrypt(data));
     } catch (err) {
         res.status(500).json({ error: 'Failed' });
     }
 });
-
 app.get('/token', async (req, res) => {
     try {
         res.send(encrypt(process.env.BOT_TOKEN));
